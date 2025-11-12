@@ -9,37 +9,41 @@ export default function App() {
   const dataArrayRef = useRef(null);
 
   useEffect(() => {
-    // музыка по клику
+    // музыка по клику (iPhone friendly)
     const handleClick = () => {
-      if (audioRef.current) audioRef.current.play().catch(() => {});
+      if (audioRef.current) {
+        audioRef.current.play().catch(() => {});
+      }
+      const hint = document.getElementById("tapHint");
+      if (hint) hint.style.display = "none";
       document.removeEventListener("click", handleClick);
     };
     document.addEventListener("click", handleClick);
 
-    // мощные конфетти по всему экрану
+    // улучшенные конфетти (по всему экрану)
     const fireConfetti = () => {
-      const end = Date.now() + 800;
+      const end = Date.now() + 1000;
       const colors = ["#ff00ff", "#00f5d4", "#f9c80e", "#ff5400", "#00c3ff"];
       (function frame() {
         confetti({
-          particleCount: 8,
+          particleCount: 10,
           angle: 60,
           spread: 75,
           origin: { x: 0 },
           colors,
         });
         confetti({
-          particleCount: 8,
+          particleCount: 10,
           angle: 120,
           spread: 75,
           origin: { x: 1 },
           colors,
         });
         confetti({
-          particleCount: 6,
+          particleCount: 8,
           angle: 90,
           spread: 120,
-          origin: { x: Math.random(), y: Math.random() * 0.5 },
+          origin: { x: Math.random(), y: Math.random() * 0.6 },
           colors,
         });
         if (Date.now() < end) {
@@ -47,10 +51,9 @@ export default function App() {
         }
       })();
     };
-
     const confettiInterval = setInterval(fireConfetti, 2500);
 
-    // аудио-анализатор (фон под бит)
+    // аудио-анализатор для визуализации
     const audio = audioRef.current;
     const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
     const source = audioCtx.createMediaElementSource(audio);
@@ -63,10 +66,9 @@ export default function App() {
     analyserRef.current = analyser;
     dataArrayRef.current = dataArray;
 
+    // фон-анимация (реагирует на звук)
     const canvas = canvasRef.current;
     const ctx = canvas.getContext("2d");
-    let particles = [];
-
     const resize = () => {
       canvas.width = window.innerWidth;
       canvas.height = window.innerHeight;
@@ -74,7 +76,6 @@ export default function App() {
     window.addEventListener("resize", resize);
     resize();
 
-    // фон с мягкими вспышками под музыку
     const animate = () => {
       analyser.getByteFrequencyData(dataArray);
       const avg = dataArray.reduce((a, b) => a + b, 0) / dataArray.length / 255;
@@ -88,9 +89,12 @@ export default function App() {
         0,
         canvas.width / 2,
         canvas.height / 2,
-        canvas.width / 1.2
+        canvas.width / 1.3
       );
-      grad.addColorStop(0, `rgba(${100 + avg * 155}, 50, ${255 - avg * 155}, 0.8)`);
+      grad.addColorStop(
+        0,
+        `rgba(${100 + avg * 155}, 50, ${255 - avg * 155}, 0.9)`
+      );
       grad.addColorStop(1, "rgba(0,0,0,0.6)");
       ctx.fillStyle = grad;
       ctx.fillRect(0, 0, canvas.width, canvas.height);
@@ -110,6 +114,7 @@ export default function App() {
     <div
       style={{
         minHeight: "100vh",
+        width: "100%",
         color: "#fff",
         overflow: "hidden",
         position: "relative",
@@ -118,10 +123,12 @@ export default function App() {
         alignItems: "center",
         justifyContent: "center",
         fontFamily: "'Orbitron', sans-serif",
+        boxSizing: "border-box",
+        padding: "0 10px",
       }}
     >
       {/* 🎵 музыка */}
-      <audio ref={audioRef} src="/music.mp3" loop />
+      <audio ref={audioRef} src="/music.mp3" loop preload="auto" />
 
       {/* 🌌 фон */}
       <canvas
@@ -130,21 +137,25 @@ export default function App() {
           position: "absolute",
           inset: 0,
           zIndex: 1,
+          willChange: "transform",
+          transform: "translateZ(0)",
         }}
       />
 
-      {/* текст */}
+      {/* 🎉 текст */}
       <motion.h1
         initial={{ opacity: 0, y: -50 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 1 }}
         style={{
-          fontSize: "4.5rem",
+          fontSize: "clamp(2rem, 6vw, 4rem)",
           textAlign: "center",
           color: "#ff9efc",
           textShadow: "0 0 40px #ff5edb, 0 0 80px #ff5edb",
           zIndex: 3,
           letterSpacing: "2px",
+          willChange: "transform",
+          transform: "translateZ(0)",
         }}
       >
         🎉 С Днём Рождения, Дима! 🎉
@@ -155,13 +166,14 @@ export default function App() {
         animate={{ opacity: 1 }}
         transition={{ delay: 1 }}
         style={{
-          fontSize: "1.5rem",
+          fontSize: "clamp(1rem, 4vw, 1.4rem)",
           textAlign: "center",
           maxWidth: "700px",
           marginTop: "20px",
           lineHeight: "1.7em",
           textShadow: "0 0 20px rgba(255,255,255,0.8)",
           zIndex: 3,
+          filter: "brightness(1.1) contrast(1.2)",
         }}
       >
         Пусть зарплата в Сокаре растёт как ракета 🚀 <br />
@@ -173,8 +185,10 @@ export default function App() {
       <motion.div
         style={{
           display: "flex",
-          gap: "80px",
-          marginTop: "60px",
+          flexWrap: "wrap",
+          justifyContent: "center",
+          gap: "30px",
+          marginTop: "40px",
           zIndex: 3,
         }}
       >
@@ -184,33 +198,51 @@ export default function App() {
             src={`/dima${n}.jpg`}
             alt={`Дима ${n}`}
             animate={{
-              y: [0, -25, 0, 25, 0],
-              rotateY: [0, 12, -12, 0],
-              rotateZ: [0, 3, -3, 0],
+              y: [0, -20, 0, 20, 0],
+              rotateY: [0, 10, -10, 0],
               scale: [1, 1.08, 1],
             }}
             transition={{
-              duration: 8,
+              duration: 7,
               repeat: Infinity,
               ease: "easeInOut",
-              delay: i * 1.5,
+              delay: i * 1.2,
             }}
             whileHover={{
               scale: 1.12,
               boxShadow: "0 0 80px #ff5edb",
             }}
             style={{
-              width: "320px",
-              height: "320px",
+              width: "min(80vw, 300px)",
+              height: "min(80vw, 300px)",
               objectFit: "cover",
-              borderRadius: "40px",
-              border: "4px solid #ff9efc",
+              borderRadius: "30px",
+              border: "3px solid #ff9efc",
               boxShadow: "0 0 60px rgba(255, 94, 219, 0.8)",
               cursor: "pointer",
+              willChange: "transform",
+              transform: "translateZ(0)",
             }}
           />
         ))}
       </motion.div>
+
+      {/* 👆 подсказка для iPhone */}
+      <div
+        id="tapHint"
+        style={{
+          position: "fixed",
+          bottom: "20px",
+          width: "100%",
+          textAlign: "center",
+          color: "#ccc",
+          fontSize: "0.9rem",
+          zIndex: 5,
+          animation: "pulse 2s infinite",
+        }}
+      >
+        🎵 Нажми на экран, чтобы начать праздник
+      </div>
     </div>
   );
 }
