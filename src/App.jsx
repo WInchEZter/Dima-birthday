@@ -1,49 +1,60 @@
-import React, { useEffect, useRef } from "react";
-import { motion } from "framer-motion";
+import React, { useEffect, useRef, useState } from "react";
+import { motion, useMotionValue, useTransform } from "framer-motion";
 import confetti from "canvas-confetti";
 
 export default function App() {
   const audioRef = useRef(null);
+  const [mouse, setMouse] = useState({ x: 0, y: 0 });
+  const bgX = useMotionValue(0);
+  const bgY = useMotionValue(0);
+  const rotateX = useTransform(bgY, [-100, 100], [15, -15]);
+  const rotateY = useTransform(bgX, [-100, 100], [-15, 15]);
 
   useEffect(() => {
-    // автозапуск музыки при первом клике
+    // запуск музыки
     const handleClick = () => {
-      if (audioRef.current) {
-        audioRef.current.play().catch(() => {});
-      }
+      if (audioRef.current) audioRef.current.play().catch(() => {});
       document.removeEventListener("click", handleClick);
     };
     document.addEventListener("click", handleClick);
 
-    // конфетти + фейерверки каждые 2.5 секунды
+    // фейерверки
     const interval = setInterval(() => {
       confetti({
-        particleCount: 100,
-        spread: 70,
-        origin: { y: 0.7 },
+        particleCount: 120,
+        spread: 80,
+        origin: { y: 0.6 },
         colors: ["#ff5edb", "#8ef9f3", "#ffe45e", "#9b5de5"],
       });
       confetti({
-        particleCount: 60,
+        particleCount: 70,
         angle: 60,
-        spread: 80,
+        spread: 90,
         origin: { x: 0 },
-        colors: ["#00f5d4", "#f15bb5", "#fee440"],
       });
       confetti({
-        particleCount: 60,
+        particleCount: 70,
         angle: 120,
-        spread: 80,
+        spread: 90,
         origin: { x: 1 },
-        colors: ["#9b5de5", "#f15bb5", "#fee440"],
       });
-    }, 2500);
+    }, 3000);
 
     return () => clearInterval(interval);
   }, []);
 
+  // параллакс эффект
+  const handleMouseMove = (e) => {
+    const x = e.clientX - window.innerWidth / 2;
+    const y = e.clientY - window.innerHeight / 2;
+    bgX.set(x / 20);
+    bgY.set(y / 20);
+    setMouse({ x, y });
+  };
+
   return (
-    <div
+    <motion.div
+      onMouseMove={handleMouseMove}
       style={{
         minHeight: "100vh",
         overflow: "hidden",
@@ -53,15 +64,29 @@ export default function App() {
         alignItems: "center",
         justifyContent: "center",
         position: "relative",
+        perspective: "1000px",
       }}
     >
-      {/* музыка */}
+      {/* 🎵 музыка */}
       <audio ref={audioRef} src="/music.mp3" loop />
 
-      {/* анимированный градиентный фон */}
+      {/* 🌈 фон с переливом и вспышками */}
       <motion.div
-        animate={{ backgroundPosition: ["0% 50%", "100% 50%", "0% 50%"] }}
-        transition={{ duration: 20, repeat: Infinity, ease: "linear" }}
+        animate={{
+          backgroundPosition: ["0% 50%", "100% 50%", "0% 50%"],
+          filter: [
+            "brightness(1)",
+            "brightness(1.2)",
+            "brightness(1)",
+            "brightness(0.8)",
+            "brightness(1)",
+          ],
+        }}
+        transition={{
+          duration: 25,
+          repeat: Infinity,
+          ease: "easeInOut",
+        }}
         style={{
           position: "absolute",
           inset: 0,
@@ -106,16 +131,12 @@ export default function App() {
         от твоего братишки Исмаила 😎
       </motion.p>
 
-      {/* блок с фотками */}
+      {/* 📸 фотки */}
       <motion.div
-        initial={{ opacity: 0, scale: 0.8 }}
-        animate={{ opacity: 1, scale: 1 }}
-        transition={{ delay: 1.2, duration: 1 }}
         style={{
           display: "flex",
-          gap: "40px",
-          marginTop: "40px",
-          perspective: "800px",
+          gap: "60px",
+          marginTop: "50px",
           zIndex: 2,
         }}
       >
@@ -124,24 +145,46 @@ export default function App() {
             key={n}
             src={`/dima${n}.jpg`}
             alt={`Дима ${n}`}
+            animate={{
+              y: [0, -10, 0, 10, 0],
+              rotateZ: i === 0 ? [0, 2, -2, 0] : [0, -2, 2, 0],
+              scale: [1, 1.05, 1],
+            }}
+            transition={{
+              duration: 6,
+              repeat: Infinity,
+              ease: "easeInOut",
+              delay: i * 1.5,
+            }}
             whileHover={{
-              rotateY: i === 0 ? 10 : -10,
-              scale: 1.05,
+              scale: 1.1,
               boxShadow: "0 0 40px #ff5edb",
             }}
-            transition={{ type: "spring", stiffness: 100 }}
             style={{
               width: "200px",
               height: "200px",
               objectFit: "cover",
-              borderRadius: "20px",
+              borderRadius: "25px",
               border: "3px solid #ff9efc",
-              boxShadow: "0 0 20px rgba(255, 94, 219, 0.6)",
+              boxShadow: "0 0 25px rgba(255, 94, 219, 0.7)",
               cursor: "pointer",
+              transformStyle: "preserve-3d",
             }}
           />
         ))}
       </motion.div>
-    </div>
+
+      {/* параллакс наклон */}
+      <motion.div
+        style={{
+          position: "absolute",
+          inset: 0,
+          transformOrigin: "center",
+          rotateX,
+          rotateY,
+          zIndex: 1,
+        }}
+      />
+    </motion.div>
   );
 }
