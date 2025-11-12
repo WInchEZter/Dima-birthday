@@ -9,27 +9,48 @@ export default function App() {
   const dataArrayRef = useRef(null);
 
   useEffect(() => {
-    // запуск музыки по клику
+    // музыка по клику
     const handleClick = () => {
-      if (audioRef.current) {
-        audioRef.current.play().catch(() => {});
-      }
+      if (audioRef.current) audioRef.current.play().catch(() => {});
       document.removeEventListener("click", handleClick);
     };
     document.addEventListener("click", handleClick);
 
-    // фейерверки
-    const confettiInterval = setInterval(() => {
-      confetti({
-        particleCount: 160,
-        spread: 120,
-        startVelocity: 40,
-        origin: { y: 0.7 },
-        colors: ["#ff00ff", "#00f5d4", "#f9c80e", "#ff5400"],
-      });
-    }, 3000);
+    // мощные конфетти по всему экрану
+    const fireConfetti = () => {
+      const end = Date.now() + 800;
+      const colors = ["#ff00ff", "#00f5d4", "#f9c80e", "#ff5400", "#00c3ff"];
+      (function frame() {
+        confetti({
+          particleCount: 8,
+          angle: 60,
+          spread: 75,
+          origin: { x: 0 },
+          colors,
+        });
+        confetti({
+          particleCount: 8,
+          angle: 120,
+          spread: 75,
+          origin: { x: 1 },
+          colors,
+        });
+        confetti({
+          particleCount: 6,
+          angle: 90,
+          spread: 120,
+          origin: { x: Math.random(), y: Math.random() * 0.5 },
+          colors,
+        });
+        if (Date.now() < end) {
+          requestAnimationFrame(frame);
+        }
+      })();
+    };
 
-    // аудио-анализ для эффекта под бит
+    const confettiInterval = setInterval(fireConfetti, 2500);
+
+    // аудио-анализатор (фон под бит)
     const audio = audioRef.current;
     const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
     const source = audioCtx.createMediaElementSource(audio);
@@ -42,10 +63,9 @@ export default function App() {
     analyserRef.current = analyser;
     dataArrayRef.current = dataArray;
 
-    // кометы и визуализация фона
     const canvas = canvasRef.current;
     const ctx = canvas.getContext("2d");
-    let comets = [];
+    let particles = [];
 
     const resize = () => {
       canvas.width = window.innerWidth;
@@ -54,27 +74,15 @@ export default function App() {
     window.addEventListener("resize", resize);
     resize();
 
-    const spawnComet = () => {
-      comets.push({
-        x: Math.random() * canvas.width,
-        y: Math.random() * canvas.height * 0.5,
-        size: Math.random() * 4 + 2,
-        speed: Math.random() * 3 + 2,
-        hue: Math.random() * 360,
-      });
-    };
-
-    // рисуем фон + кометы
+    // фон с мягкими вспышками под музыку
     const animate = () => {
       analyser.getByteFrequencyData(dataArray);
-      const avg =
-        dataArray.reduce((a, b) => a + b, 0) / dataArray.length / 255;
+      const avg = dataArray.reduce((a, b) => a + b, 0) / dataArray.length / 255;
 
-      ctx.fillStyle = `rgba(0, 0, 20, 0.3)`;
+      ctx.fillStyle = `rgba(0,0,20,0.3)`;
       ctx.fillRect(0, 0, canvas.width, canvas.height);
 
-      // неоновые волны (пульс под бит)
-      const gradient = ctx.createRadialGradient(
+      const grad = ctx.createRadialGradient(
         canvas.width / 2,
         canvas.height / 2,
         0,
@@ -82,27 +90,10 @@ export default function App() {
         canvas.height / 2,
         canvas.width / 1.2
       );
-      gradient.addColorStop(
-        0,
-        `rgba(${100 + avg * 200},${20 + avg * 200},${255 - avg * 200},0.9)`
-      );
-      gradient.addColorStop(1, `rgba(0,0,0,0.6)`);
-      ctx.fillStyle = gradient;
+      grad.addColorStop(0, `rgba(${100 + avg * 155}, 50, ${255 - avg * 155}, 0.8)`);
+      grad.addColorStop(1, "rgba(0,0,0,0.6)");
+      ctx.fillStyle = grad;
       ctx.fillRect(0, 0, canvas.width, canvas.height);
-
-      // кометы
-      if (Math.random() < 0.02) spawnComet();
-      comets.forEach((c, i) => {
-        c.x += c.speed;
-        c.y += Math.sin(c.x / 50) * 2;
-        ctx.beginPath();
-        ctx.arc(c.x, c.y, c.size, 0, Math.PI * 2);
-        ctx.fillStyle = `hsl(${c.hue},100%,70%)`;
-        ctx.shadowBlur = 15;
-        ctx.shadowColor = `hsl(${c.hue},100%,70%)`;
-        ctx.fill();
-        if (c.x > canvas.width + 50) comets.splice(i, 1);
-      });
 
       requestAnimationFrame(animate);
     };
@@ -126,12 +117,13 @@ export default function App() {
         flexDirection: "column",
         alignItems: "center",
         justifyContent: "center",
+        fontFamily: "'Orbitron', sans-serif",
       }}
     >
-      {/* музыка */}
+      {/* 🎵 музыка */}
       <audio ref={audioRef} src="/music.mp3" loop />
 
-      {/* неоновый фон */}
+      {/* 🌌 фон */}
       <canvas
         ref={canvasRef}
         style={{
@@ -147,11 +139,12 @@ export default function App() {
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 1 }}
         style={{
-          fontSize: "4rem",
+          fontSize: "4.5rem",
           textAlign: "center",
           color: "#ff9efc",
-          textShadow: "0 0 30px #ff5edb, 0 0 60px #ff5edb",
+          textShadow: "0 0 40px #ff5edb, 0 0 80px #ff5edb",
           zIndex: 3,
+          letterSpacing: "2px",
         }}
       >
         🎉 С Днём Рождения, Дима! 🎉
@@ -167,7 +160,7 @@ export default function App() {
           maxWidth: "700px",
           marginTop: "20px",
           lineHeight: "1.7em",
-          textShadow: "0 0 15px rgba(255,255,255,0.7)",
+          textShadow: "0 0 20px rgba(255,255,255,0.8)",
           zIndex: 3,
         }}
       >
@@ -176,7 +169,7 @@ export default function App() {
         от твоего братишки Исмаила 😎
       </motion.p>
 
-      {/* фотки */}
+      {/* 📸 фотки */}
       <motion.div
         style={{
           display: "flex",
@@ -192,8 +185,8 @@ export default function App() {
             alt={`Дима ${n}`}
             animate={{
               y: [0, -25, 0, 25, 0],
-              rotateY: [0, 10, -10, 0],
-              rotateZ: [0, 2, -2, 0],
+              rotateY: [0, 12, -12, 0],
+              rotateZ: [0, 3, -3, 0],
               scale: [1, 1.08, 1],
             }}
             transition={{
@@ -204,15 +197,15 @@ export default function App() {
             }}
             whileHover={{
               scale: 1.12,
-              boxShadow: "0 0 60px #ff5edb",
+              boxShadow: "0 0 80px #ff5edb",
             }}
             style={{
-              width: "300px",
-              height: "300px",
+              width: "320px",
+              height: "320px",
               objectFit: "cover",
               borderRadius: "40px",
               border: "4px solid #ff9efc",
-              boxShadow: "0 0 50px rgba(255, 94, 219, 0.8)",
+              boxShadow: "0 0 60px rgba(255, 94, 219, 0.8)",
               cursor: "pointer",
             }}
           />
