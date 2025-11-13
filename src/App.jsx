@@ -9,7 +9,7 @@ export default function App() {
   const dataArrayRef = useRef(null);
 
   useEffect(() => {
-    // запуск музыки (iPhone fix)
+    // Музыка по клику (iPhone-friendly autoplay)
     const handleClick = () => {
       if (audioRef.current) {
         audioRef.current.play().catch(() => {});
@@ -20,7 +20,7 @@ export default function App() {
     };
     document.addEventListener("click", handleClick);
 
-    // конфетти
+    // Конфетти
     const fireConfetti = () => {
       const end = Date.now() + 900;
       const colors = ["#ff00ff", "#00f5d4", "#f9c80e", "#ff5400", "#00c3ff"];
@@ -36,7 +36,7 @@ export default function App() {
     };
     const confettiInterval = setInterval(fireConfetti, 2500);
 
-    // аудио-анализатор для фона
+    // Аудио-анализатор (фон реагирует по басам)
     const audio = audioRef.current;
     const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
     const source = audioCtx.createMediaElementSource(audio);
@@ -49,7 +49,7 @@ export default function App() {
     analyserRef.current = analyser;
     dataArrayRef.current = dataArray;
 
-    // фон-анимация
+    // Фон-анимация
     const canvas = canvasRef.current;
     const ctx = canvas.getContext("2d");
 
@@ -93,13 +93,13 @@ export default function App() {
     };
   }, []);
 
-  // массив летающих клоунов
+  // Летающие клоуны 🤡
   const flyingClowns = Array.from({ length: 6 }).map((_, i) => ({
     id: i,
-    size: Math.random() * 40 + 30,
+    size: Math.random() * 40 + 35,
     xStart: Math.random() * 100,
-    duration: Math.random() * 15 + 12,
-    delay: Math.random() * 8,
+    duration: Math.random() * 18 + 12,
+    delay: Math.random() * 7,
   }));
 
   return (
@@ -118,16 +118,20 @@ export default function App() {
         flexDirection: "column",
       }}
     >
-      {/* музыка */}
+      {/* Музыка */}
       <audio ref={audioRef} src="/music.mp3" loop preload="auto" />
 
-      {/* фон */}
+      {/* Фон */}
       <canvas
         ref={canvasRef}
-        style={{ position: "absolute", inset: 0, zIndex: 1 }}
+        style={{
+          position: "absolute",
+          inset: 0,
+          zIndex: 1,
+        }}
       />
 
-      {/* ЛЕТАЮЩИЕ КЛОУНЫ 🤡 */}
+      {/* Летающие клоуны 🤡 */}
       {flyingClowns.map((clown) => (
         <motion.div
           key={clown.id}
@@ -159,89 +163,88 @@ export default function App() {
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 1 }}
         style={{
-          fontSize: "clamp(2.2rem, 7vw, 4.5rem)",
-          fontWeight: 700,
+          fontSize: "clamp(2.2rem, 7vw, 4.3rem)",
           textAlign: "center",
+          margin: "25px 0",
           zIndex: 3,
+          fontWeight: 700,
+          background:
+            "linear-gradient(90deg, #ff00ff, #00eaff, #ffea00, #ff00ff)",
+          backgroundSize: "300% 300%",
+          WebkitBackgroundClip: "text",
+          WebkitTextFillColor: "transparent",
+          animation: "titleColorShift 6s ease-in-out infinite",
+          textShadow: "0 0 20px rgba(255,255,255,0.5)",
         }}
       >
-        🎉{" "}
-        <span
-          style={{
-            background:
-              "linear-gradient(90deg, #ff00ff, #00eaff, #ffea00, #ff00ff)",
-            backgroundSize: "300% 300%",
-            WebkitBackgroundClip: "text",
-            WebkitTextFillColor: "transparent",
-            animation: "titleColorShift 6s ease-in-out infinite",
-          }}
-        >
-          С Днём Рождения, Дима!
-        </span>{" "}
-        🎊
+        🎉🤡 С Днём Рождения, Дима! 🤡🎉
       </motion.h1>
 
-      {/* текст пожеланий */}
+      {/* Пожелание */}
       <motion.p
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
-        transition={{ delay: 1 }}
+        transition={{ delay: 0.8 }}
         style={{
           fontSize: "clamp(1rem, 4vw, 1.4rem)",
           textAlign: "center",
-          marginTop: 20,
+          marginTop: 10,
           maxWidth: 700,
           lineHeight: 1.7,
-          textShadow: "0 0 20px rgba(255,255,255,0.6)",
+          textShadow: "0 0 20px rgba(255,255,255,0.7)",
           zIndex: 3,
         }}
       >
         Пусть зарплата в Сокаре растёт как ракета 🚀  
-        настроение будет всегда на 100%  
-        а удача будет рядом каждый день!  
+        настроение всегда на 100%  
+        а удача рядом каждый день!  
         От братишки Исмаила 😎🔥
       </motion.p>
 
-      {/* фотографии */}
-      <motion.div
+      {/* 📸 Фото (исправленные!) */}
+      <div
         style={{
-          display: "flex",
-          flexWrap: "wrap",
-          justifyContent: "center",
-          gap: 30,
-          marginTop: 40,
+          display: "grid",
+          gridTemplateColumns: "repeat(auto-fit, minmax(260px, 1fr))",
+          gap: "30px",
+          width: "100%",
+          maxWidth: "950px",
+          padding: "20px",
+          marginTop: "40px",
           zIndex: 3,
         }}
       >
         {[1, 2].map((n, i) => (
-          <motion.img
+          <motion.div
             key={n}
-            src={`/dima${n}.jpg`}
-            alt={n}
-            animate={{
-              y: [0, -20, 0, 20, 0],
-              rotateY: [0, 10, -10, 0],
-              scale: [1, 1.08, 1],
-            }}
-            transition={{
-              duration: 7,
-              repeat: Infinity,
-              ease: "easeInOut",
-              delay: i * 1.2,
-            }}
+            initial={{ opacity: 0, scale: 0.8 }}
+            animate={{ opacity: 1, scale: 1 }}
+            transition={{ delay: i * 0.2 }}
             style={{
-              width: "min(80vw, 300px)",
-              height: "min(80vw, 300px)",
-              objectFit: "cover",
-              borderRadius: 30,
-              border: "3px solid #ff9efc",
-              boxShadow: "0 0 50px rgba(255, 94, 219, 0.8)",
+              padding: "12px",
+              borderRadius: "25px",
+              background: "rgba(255,255,255,0.12)",
+              backdropFilter: "blur(8px)",
+              boxShadow: "0 0 30px rgba(255, 0, 255, 0.35)",
+              border: "2px solid rgba(255,255,255,0.2)",
             }}
-          />
+            className="floating"
+          >
+            <img
+              src={`/dima${n}.jpg`}
+              alt={n}
+              style={{
+                width: "100%",
+                height: "auto",
+                borderRadius: "20px",
+                objectFit: "cover",
+              }}
+            />
+          </motion.div>
         ))}
-      </motion.div>
+      </div>
 
-      {/* подсказка */}
+      {/* Подсказка */}
       <div
         id="tapHint"
         style={{
@@ -251,18 +254,29 @@ export default function App() {
           textAlign: "center",
           color: "#ccc",
           zIndex: 5,
+          animation: "pulse 2s infinite",
         }}
       >
         🎵 Нажми на экран, чтобы включить музыку
       </div>
 
-      {/* анимация цвета */}
+      {/* Анимация цвета для заголовка */}
       <style>
         {`
         @keyframes titleColorShift {
           0% { background-position: 0% 50%; }
           50% { background-position: 100% 50%; }
           100% { background-position: 0% 50%; }
+        }
+
+        @keyframes float {
+          0% { transform: translateY(0px); }
+          50% { transform: translateY(-12px); }
+          100% { transform: translateY(0px); }
+        }
+
+        .floating {
+          animation: float 4s ease-in-out infinite;
         }
         `}
       </style>
