@@ -1,304 +1,219 @@
-import React, { useEffect, useRef } from "react";
-import { motion } from "framer-motion";
-import confetti from "canvas-confetti";
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>С Днём Рождения, Дима!</title>
 
-export default function App() {
-  const audioRef = useRef(null);
-  const canvasRef = useRef(null);
+<!-- ШРИФТЫ -->
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;600;700&display=swap" rel="stylesheet" />
 
-  useEffect(() => {
-    // --- Автостарт музыки по тапу (айфон фикс) ---
-    const handleClick = () => {
-      if (audioRef.current) {
-        audioRef.current.play().catch(() => {});
-      }
-      const hint = document.getElementById("tapHint");
-      if (hint) hint.style.display = "none";
-      document.removeEventListener("click", handleClick);
-    };
-    document.addEventListener("click", handleClick);
-
-    // --- Конфетти каждые 2.5 секунды ---
-    const fireConfetti = () => {
-      const end = Date.now() + 900;
-      const colors = ["#ff00ff", "#00f5d4", "#f9c80e", "#ff5400", "#00c3ff"];
-      (function frame() {
-        confetti({
-          particleCount: 12,
-          spread: 80,
-          origin: { x: Math.random(), y: Math.random() * 0.3 },
-          colors,
-        });
-        if (Date.now() < end) requestAnimationFrame(frame);
-      })();
-    };
-    const confettiInterval = setInterval(fireConfetti, 2500);
-
-    // --- Фон, реагирующий на звук ---
-    const audio = audioRef.current;
-    const canvas = canvasRef.current;
-    const ctx = canvas.getContext("2d");
-
-    const resize = () => {
-      canvas.width = window.innerWidth;
-      canvas.height = window.innerHeight;
-    };
-    window.addEventListener("resize", resize);
-    resize();
-
-    const AudioCtx = window.AudioContext || window.webkitAudioContext;
-    const audioCtx = new AudioCtx();
-    const source = audioCtx.createMediaElementSource(audio);
-    const analyser = audioCtx.createAnalyser();
-    analyser.fftSize = 256;
-    const bufferLength = analyser.frequencyBinCount;
-    const dataArray = new Uint8Array(bufferLength);
-    source.connect(analyser);
-    analyser.connect(audioCtx.destination);
-
-    const animate = () => {
-      analyser.getByteFrequencyData(dataArray);
-      const avg =
-        dataArray.reduce((sum, v) => sum + v, 0) /
-        (dataArray.length || 1) /
-        255;
-
-      ctx.fillStyle = "rgba(0,0,25,0.3)";
-      ctx.fillRect(0, 0, canvas.width, canvas.height);
-
-      const grad = ctx.createRadialGradient(
-        canvas.width / 2,
-        canvas.height / 2,
-        0,
-        canvas.width / 2,
-        canvas.height / 2,
-        canvas.width / 1.3
-      );
-      grad.addColorStop(
-        0,
-        `rgba(${130 + avg * 120}, 50, 255, ${0.9 - avg * 0.3})`
-      );
-      grad.addColorStop(1, "rgba(0,0,0,0.7)");
-      ctx.fillStyle = grad;
-      ctx.fillRect(0, 0, canvas.width, canvas.height);
-
-      requestAnimationFrame(animate);
-    };
-    animate();
-
-    return () => {
-      clearInterval(confettiInterval);
-      window.removeEventListener("resize", resize);
-      audioCtx.close();
-    };
-  }, []);
-
-  // --- Летающие клоуны 🤡 ---
-  const flyingClowns = Array.from({ length: 6 }).map((_, i) => ({
-    id: i,
-    size: Math.random() * 32 + 30,
-    xStart: Math.random() * 100,
-    duration: Math.random() * 16 + 12,
-    delay: Math.random() * 7,
-  }));
-
-  return (
-    <div
-      style={{
-        minHeight: "100vh",
-        width: "100%",
-        overflow: "hidden",
-        color: "#fff",
-        fontFamily: "'Orbitron', system-ui, sans-serif",
-        position: "relative",
-        padding: "0 10px 40px",
-        display: "flex",
-        alignItems: "center",
-        justifyContent: "flex-start",
-        flexDirection: "column",
-      }}
-    >
-      {/* Музыка */}
-      <audio ref={audioRef} src="/music.mp3" loop preload="auto" />
-
-      {/* Фон */}
-      <canvas
-        ref={canvasRef}
-        style={{
-          position: "absolute",
-          inset: 0,
-          zIndex: 1,
-        }}
-      />
-
-      {/* Летающие клоуны */}
-      {flyingClowns.map((clown) => (
-        <motion.div
-          key={clown.id}
-          initial={{ y: "110vh", x: `${clown.xStart}vw`, rotate: 0 }}
-          animate={{
-            y: "-20vh",
-            rotate: [0, 20, -20, 0],
-          }}
-          transition={{
-            duration: clown.duration,
-            repeat: Infinity,
-            delay: clown.delay,
-            ease: "easeInOut",
-          }}
-          style={{
-            position: "absolute",
-            fontSize: clown.size,
-            zIndex: 2,
-            pointerEvents: "none",
-          }}
-        >
-          🤡
-        </motion.div>
-      ))}
-
-      {/* Заголовок — эмодзи отдельно, текст с градиентом */}
-      <motion.div
-        initial={{ opacity: 0, y: -40 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 1 }}
-        style={{
-          marginTop: 30,
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "center",
-          gap: "10px",
-          flexWrap: "wrap",
-          zIndex: 3,
-          textAlign: "center",
-        }}
-      >
-        <span style={{ fontSize: "clamp(2.3rem, 6vw, 4rem)" }}>🎉🤡</span>
-
-        <h1
-          style={{
-            fontSize: "clamp(2.3rem, 6vw, 4rem)",
-            fontWeight: 700,
-            margin: 0,
-            background:
-              "linear-gradient(90deg, #ff00ff, #00eaff, #ffea00, #ff00ff)",
-            backgroundSize: "300% 300%",
-            WebkitBackgroundClip: "text",
-            WebkitTextFillColor: "transparent",
-            animation: "titleColorShift 6s ease-in-out infinite",
-            textShadow: "0 0 18px rgba(255,255,255,0.4)",
-          }}
-        >
-          С Днём Рождения, Дима!
-        </h1>
-
-        <span style={{ fontSize: "clamp(2.3rem, 6vw, 4rem)" }}>🤡🎉</span>
-      </motion.div>
-
-      {/* Текст пожелания */}
-      <motion.p
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
-        transition={{ delay: 0.8 }}
-        style={{
-          fontSize: "clamp(1rem, 4vw, 1.3rem)",
-          textAlign: "center",
-          marginTop: 18,
-          maxWidth: 720,
-          lineHeight: 1.7,
-          textShadow: "0 0 18px rgba(255,255,255,0.7)",
-          zIndex: 3,
-        }}
-      >
-        Пусть зарплата в Сокаре растёт как ракета 🚀, настроение всегда на 100%,
-        а удача будет рядом каждый день! От братишки Исмаила 😎🔥
-      </motion.p>
-
-      {/* Фотки — адаптивная сетка, две рядом даже на телефоне */}
-      <div
-        style={{
-          display: "grid",
-          gridTemplateColumns: "repeat(auto-fit, minmax(140px, 1fr))",
-          gap: "20px",
-          width: "100%",
-          maxWidth: "700px",
-          padding: "20px",
-          marginTop: "35px",
-          zIndex: 3,
-        }}
-      >
-        {[1, 2].map((n, i) => (
-          <motion.div
-            key={n}
-            initial={{ opacity: 0, scale: 0.9 }}
-            animate={{ opacity: 1, scale: 1 }}
-            transition={{ delay: 0.4 + i * 0.2 }}
-            style={{
-              padding: "10px",
-              borderRadius: "22px",
-              background: "rgba(255,255,255,0.12)",
-              backdropFilter: "blur(8px)",
-              boxShadow: "0 0 25px rgba(255, 0, 255, 0.35)",
-              border: "2px solid rgba(255,255,255,0.25)",
-              animation: "float 4s ease-in-out infinite",
-              animationDelay: `${i * 1.2}s`,
-            }}
-          >
-            <img
-              src={`/dima${n}.jpg`}
-              alt={`Дима ${n}`}
-              style={{
-                width: "100%",
-                height: "auto",
-                borderRadius: "18px",
-                objectFit: "cover",
-                display: "block",
-              }}
-            />
-          </motion.div>
-        ))}
-      </div>
-
-      {/* Подсказка про музыку */}
-      <div
-        id="tapHint"
-        style={{
-          position: "fixed",
-          bottom: 18,
-          width: "100%",
-          textAlign: "center",
-          color: "#ddd",
-          zIndex: 5,
-          fontSize: "0.9rem",
-          textShadow: "0 0 10px rgba(0,0,0,0.8)",
-          animation: "pulse 2s infinite",
-        }}
-      >
-        🎵 Нажми на экран, чтобы включить музыку
-      </div>
-
-      {/* Ключевые анимации */}
-      <style>
-        {`
-        @keyframes titleColorShift {
-          0% { background-position: 0% 50%; }
-          50% { background-position: 100% 50%; }
-          100% { background-position: 0% 50%; }
-        }
-
-        @keyframes float {
-          0% { transform: translateY(0px); }
-          50% { transform: translateY(-10px); }
-          100% { transform: translateY(0px); }
-        }
-
-        @keyframes pulse {
-          0% { opacity: 0.5; }
-          50% { opacity: 1; }
-          100% { opacity: 0.5; }
-        }
-        `}
-      </style>
-    </div>
-  );
+<style>
+/* ========== ОБЩИЙ ФОН ========== */
+body, html {
+  margin: 0;
+  padding: 0;
+  width: 100%;
+  height: 100%;
+  overflow-x: hidden;
+  font-family: "Poppins", sans-serif;
+  background: radial-gradient(circle at top, #4b0082, #15002b);
+  color: white;
+  text-align: center;
 }
+
+/* канвас конфетти */
+#confetti {
+  position: fixed;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+  z-index: 1;
+}
+
+/* подсказка для музыки */
+#tapHint {
+  position: fixed;
+  bottom: 25px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: rgba(0,0,0,0.55);
+  padding: 10px 20px;
+  border-radius: 20px;
+  font-size: 16px;
+  z-index: 9999;
+}
+
+/* ========== ТЕКСТ ========== */
+
+h1 {
+  font-size: clamp(34px, 6vw, 65px);
+  font-weight: 700;
+  margin-top: 40px;
+  background: linear-gradient(90deg, #ffea00, #ff46c4, #63f7ff);
+  -webkit-background-clip: text;
+  color: transparent;
+  position: relative;
+  z-index: 3;
+}
+
+.text {
+  font-size: clamp(16px, 2vw, 24px);
+  max-width: 900px;
+  margin: 20px auto;
+  line-height: 1.5;
+  position: relative;
+  z-index: 3;
+}
+
+/* ========== ФОТОБЛОК ========== */
+
+.photos {
+  margin-top: 30px;
+  display: flex;
+  justify-content: center;
+  gap: 20px;
+  flex-wrap: wrap;
+  z-index: 3;
+  position: relative;
+}
+
+.photo-card {
+  background: rgba(255,255,255,0.12);
+  backdrop-filter: blur(6px);
+  padding: 10px;
+  border-radius: 20px;
+  width: clamp(260px, 40vw, 380px);
+}
+
+.photo-card img {
+  width: 100%;
+  border-radius: 16px;
+}
+
+/* ========== АНИМАЦИЯ ВЫЕЗДА ========== */
+.fadeIn {
+  animation: fadeIn 1s ease forwards;
+  opacity: 0;
+}
+
+@keyframes fadeIn {
+  to { opacity: 1; transform: translateY(0); }
+}
+
+/* смайлики-клоуны */
+.emoji-float {
+  position: fixed;
+  font-size: 40px;
+  animation: floatEmoji infinite linear;
+  opacity: 0.7;
+  z-index: 3;
+}
+
+@keyframes floatEmoji {
+  0% { transform: translateY(120vh) rotate(0deg); }
+  100% { transform: translateY(-20vh) rotate(360deg); }
+}
+
+</style>
+</head>
+
+<body>
+
+<canvas id="confetti"></canvas>
+<div id="tapHint">🔊 Нажми на экран, чтобы включить музыку</div>
+
+<!-- МУЗЫКА -->
+<audio id="bgMusic" src="music.mp3" preload="auto"></audio>
+
+<!-- ЭМОДЗИ-КЛОУНЫ ЛЕТЯТ -->
+<script>
+const emojis = ["🤡","🎉","🥳","🤡","🎊","🤹‍♂️"];
+for (let i = 0; i < 15; i++) {
+  const e = document.createElement("div");
+  e.className = "emoji-float";
+  e.textContent = emojis[Math.floor(Math.random()*emojis.length)];
+  e.style.left = Math.random()*100 + "vw";
+  e.style.animationDuration = (6 + Math.random()*6) + "s";
+  document.body.appendChild(e);
+}
+</script>
+
+<!-- ЗАГОЛОВОК -->
+<h1 class="fadeIn">🎉 🤡 С Днём Рождения, Дима! 🤡 🎉</h1>
+
+<!-- ТЕКСТ -->
+<p class="text fadeIn" style="animation-delay:0.3s">
+  Пусть зарплата в Сокаре растёт как ракета 🚀 настроение будет всегда на 💯  
+  <br />а удача каждый день будет рядом!  
+  <br />От братишки Исмаила 😎🔥
+</p>
+
+<!-- ФОТО -->
+<div class="photos fadeIn" style="animation-delay:0.6s">
+  <div class="photo-card"><img src="dima1.jpg" /></div>
+  <div class="photo-card"><img src="dima2.jpg" /></div>
+</div>
+
+<!-- КОНФЕТТИ -->
+<script>
+const confettiCanvas = document.getElementById("confetti");
+const ctx = confettiCanvas.getContext("2d");
+confettiCanvas.width = window.innerWidth;
+confettiCanvas.height = window.innerHeight;
+
+let confetti = [];
+
+for (let i = 0; i < 200; i++) {
+  confetti.push({
+    x: Math.random()*innerWidth,
+    y: Math.random()*innerHeight,
+    r: Math.random()*6 + 2,
+    dx: (Math.random() - 0.5)*2,
+    dy: Math.random()*3 + 1,
+    color: `hsl(${Math.random()*360}, 100%, 60%)`
+  });
+}
+
+function drawConfetti() {
+  ctx.clearRect(0,0,innerWidth,innerHeight);
+
+  confetti.forEach(c => {
+    ctx.beginPath();
+    ctx.arc(c.x, c.y, c.r, 0, Math.PI*2);
+    ctx.fillStyle = c.color;
+    ctx.fill();
+    c.x += c.dx;
+    c.y += c.dy;
+
+    if (c.y > innerHeight) {
+      c.y = -10;
+      c.x = Math.random()*innerWidth;
+    }
+  });
+
+  requestAnimationFrame(drawConfetti);
+}
+
+drawConfetti();
+</script>
+
+<!-- АВТОЗАПУСК МУЗЫКИ -->
+<script>
+const audio = document.getElementById("bgMusic");
+function tryPlay() {
+  audio.play().then(() => {
+    document.getElementById("tapHint").style.display = "none";
+  }).catch(()=>{});
+}
+
+["click","touchstart","pointerdown","keydown"].forEach(ev =>
+  document.addEventListener(ev, tryPlay, { once:true })
+);
+
+setTimeout(tryPlay, 1000);
+</script>
+
+</body>
+</html>
