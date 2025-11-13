@@ -5,11 +5,9 @@ import confetti from "canvas-confetti";
 export default function App() {
   const audioRef = useRef(null);
   const canvasRef = useRef(null);
-  const analyserRef = useRef(null);
-  const dataArrayRef = useRef(null);
 
   useEffect(() => {
-    // Музыка по клику (iPhone-friendly autoplay)
+    // --- Автостарт музыки по тапу (айфон фикс) ---
     const handleClick = () => {
       if (audioRef.current) {
         audioRef.current.play().catch(() => {});
@@ -20,13 +18,13 @@ export default function App() {
     };
     document.addEventListener("click", handleClick);
 
-    // Конфетти
+    // --- Конфетти каждые 2.5 секунды ---
     const fireConfetti = () => {
       const end = Date.now() + 900;
       const colors = ["#ff00ff", "#00f5d4", "#f9c80e", "#ff5400", "#00c3ff"];
       (function frame() {
         confetti({
-          particleCount: 10,
+          particleCount: 12,
           spread: 80,
           origin: { x: Math.random(), y: Math.random() * 0.3 },
           colors,
@@ -36,20 +34,8 @@ export default function App() {
     };
     const confettiInterval = setInterval(fireConfetti, 2500);
 
-    // Аудио-анализатор (фон реагирует по басам)
+    // --- Фон, реагирующий на звук ---
     const audio = audioRef.current;
-    const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-    const source = audioCtx.createMediaElementSource(audio);
-    const analyser = audioCtx.createAnalyser();
-    analyser.fftSize = 256;
-    const bufferLength = analyser.frequencyBinCount;
-    const dataArray = new Uint8Array(bufferLength);
-    source.connect(analyser);
-    analyser.connect(audioCtx.destination);
-    analyserRef.current = analyser;
-    dataArrayRef.current = dataArray;
-
-    // Фон-анимация
     const canvas = canvasRef.current;
     const ctx = canvas.getContext("2d");
 
@@ -60,11 +46,24 @@ export default function App() {
     window.addEventListener("resize", resize);
     resize();
 
+    const AudioCtx = window.AudioContext || window.webkitAudioContext;
+    const audioCtx = new AudioCtx();
+    const source = audioCtx.createMediaElementSource(audio);
+    const analyser = audioCtx.createAnalyser();
+    analyser.fftSize = 256;
+    const bufferLength = analyser.frequencyBinCount;
+    const dataArray = new Uint8Array(bufferLength);
+    source.connect(analyser);
+    analyser.connect(audioCtx.destination);
+
     const animate = () => {
       analyser.getByteFrequencyData(dataArray);
-      const avg = dataArray.reduce((a, b) => a + b, 0) / dataArray.length / 255;
+      const avg =
+        dataArray.reduce((sum, v) => sum + v, 0) /
+        (dataArray.length || 1) /
+        255;
 
-      ctx.fillStyle = "rgba(0,0,20,0.25)";
+      ctx.fillStyle = "rgba(0,0,25,0.3)";
       ctx.fillRect(0, 0, canvas.width, canvas.height);
 
       const grad = ctx.createRadialGradient(
@@ -73,12 +72,13 @@ export default function App() {
         0,
         canvas.width / 2,
         canvas.height / 2,
-        canvas.width / 1.4
+        canvas.width / 1.3
       );
-
-      grad.addColorStop(0, `rgba(${150 + avg * 100}, 50, 255, 0.9)`);
-      grad.addColorStop(1, "rgba(0,0,0,0.5)");
-
+      grad.addColorStop(
+        0,
+        `rgba(${130 + avg * 120}, 50, 255, ${0.9 - avg * 0.3})`
+      );
+      grad.addColorStop(1, "rgba(0,0,0,0.7)");
       ctx.fillStyle = grad;
       ctx.fillRect(0, 0, canvas.width, canvas.height);
 
@@ -93,12 +93,12 @@ export default function App() {
     };
   }, []);
 
-  // Летающие клоуны 🤡
+  // --- Летающие клоуны 🤡 ---
   const flyingClowns = Array.from({ length: 6 }).map((_, i) => ({
     id: i,
-    size: Math.random() * 40 + 35,
+    size: Math.random() * 32 + 30,
     xStart: Math.random() * 100,
-    duration: Math.random() * 18 + 12,
+    duration: Math.random() * 16 + 12,
     delay: Math.random() * 7,
   }));
 
@@ -109,12 +109,12 @@ export default function App() {
         width: "100%",
         overflow: "hidden",
         color: "#fff",
-        fontFamily: "'Orbitron', sans-serif",
+        fontFamily: "'Orbitron', system-ui, sans-serif",
         position: "relative",
-        padding: "0 10px",
+        padding: "0 10px 40px",
         display: "flex",
         alignItems: "center",
-        justifyContent: "center",
+        justifyContent: "flex-start",
         flexDirection: "column",
       }}
     >
@@ -131,7 +131,7 @@ export default function App() {
         }}
       />
 
-      {/* Летающие клоуны 🤡 */}
+      {/* Летающие клоуны */}
       {flyingClowns.map((clown) => (
         <motion.div
           key={clown.id}
@@ -157,110 +157,127 @@ export default function App() {
         </motion.div>
       ))}
 
-      {/* Заголовок */}
-      <motion.h1
+      {/* Заголовок — эмодзи отдельно, текст с градиентом */}
+      <motion.div
         initial={{ opacity: 0, y: -40 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 1 }}
         style={{
-          fontSize: "clamp(2.2rem, 7vw, 4.3rem)",
-          textAlign: "center",
-          margin: "25px 0",
+          marginTop: 30,
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
+          gap: "10px",
+          flexWrap: "wrap",
           zIndex: 3,
-          fontWeight: 700,
-          background:
-            "linear-gradient(90deg, #ff00ff, #00eaff, #ffea00, #ff00ff)",
-          backgroundSize: "300% 300%",
-          WebkitBackgroundClip: "text",
-          WebkitTextFillColor: "transparent",
-          animation: "titleColorShift 6s ease-in-out infinite",
-          textShadow: "0 0 20px rgba(255,255,255,0.5)",
+          textAlign: "center",
         }}
       >
-        🎉🤡 С Днём Рождения, Дима! 🤡🎉
-      </motion.h1>
+        <span style={{ fontSize: "clamp(2.3rem, 6vw, 4rem)" }}>🎉🤡</span>
 
-      {/* Пожелание */}
+        <h1
+          style={{
+            fontSize: "clamp(2.3rem, 6vw, 4rem)",
+            fontWeight: 700,
+            margin: 0,
+            background:
+              "linear-gradient(90deg, #ff00ff, #00eaff, #ffea00, #ff00ff)",
+            backgroundSize: "300% 300%",
+            WebkitBackgroundClip: "text",
+            WebkitTextFillColor: "transparent",
+            animation: "titleColorShift 6s ease-in-out infinite",
+            textShadow: "0 0 18px rgba(255,255,255,0.4)",
+          }}
+        >
+          С Днём Рождения, Дима!
+        </h1>
+
+        <span style={{ fontSize: "clamp(2.3rem, 6vw, 4rem)" }}>🤡🎉</span>
+      </motion.div>
+
+      {/* Текст пожелания */}
       <motion.p
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
         transition={{ delay: 0.8 }}
         style={{
-          fontSize: "clamp(1rem, 4vw, 1.4rem)",
+          fontSize: "clamp(1rem, 4vw, 1.3rem)",
           textAlign: "center",
-          marginTop: 10,
-          maxWidth: 700,
+          marginTop: 18,
+          maxWidth: 720,
           lineHeight: 1.7,
-          textShadow: "0 0 20px rgba(255,255,255,0.7)",
+          textShadow: "0 0 18px rgba(255,255,255,0.7)",
           zIndex: 3,
         }}
       >
-        Пусть зарплата в Сокаре растёт как ракета 🚀  
-        настроение всегда на 100%  
-        а удача рядом каждый день!  
-        От братишки Исмаила 😎🔥
+        Пусть зарплата в Сокаре растёт как ракета 🚀, настроение всегда на 100%,
+        а удача будет рядом каждый день! От братишки Исмаила 😎🔥
       </motion.p>
 
-      {/* 📸 Фото (исправленные!) */}
+      {/* Фотки — адаптивная сетка, две рядом даже на телефоне */}
       <div
         style={{
           display: "grid",
-          gridTemplateColumns: "repeat(auto-fit, minmax(260px, 1fr))",
-          gap: "30px",
+          gridTemplateColumns: "repeat(auto-fit, minmax(140px, 1fr))",
+          gap: "20px",
           width: "100%",
-          maxWidth: "950px",
+          maxWidth: "700px",
           padding: "20px",
-          marginTop: "40px",
+          marginTop: "35px",
           zIndex: 3,
         }}
       >
         {[1, 2].map((n, i) => (
           <motion.div
             key={n}
-            initial={{ opacity: 0, scale: 0.8 }}
+            initial={{ opacity: 0, scale: 0.9 }}
             animate={{ opacity: 1, scale: 1 }}
-            transition={{ delay: i * 0.2 }}
+            transition={{ delay: 0.4 + i * 0.2 }}
             style={{
-              padding: "12px",
-              borderRadius: "25px",
+              padding: "10px",
+              borderRadius: "22px",
               background: "rgba(255,255,255,0.12)",
               backdropFilter: "blur(8px)",
-              boxShadow: "0 0 30px rgba(255, 0, 255, 0.35)",
-              border: "2px solid rgba(255,255,255,0.2)",
+              boxShadow: "0 0 25px rgba(255, 0, 255, 0.35)",
+              border: "2px solid rgba(255,255,255,0.25)",
+              animation: "float 4s ease-in-out infinite",
+              animationDelay: `${i * 1.2}s`,
             }}
-            className="floating"
           >
             <img
               src={`/dima${n}.jpg`}
-              alt={n}
+              alt={`Дима ${n}`}
               style={{
                 width: "100%",
                 height: "auto",
-                borderRadius: "20px",
+                borderRadius: "18px",
                 objectFit: "cover",
+                display: "block",
               }}
             />
           </motion.div>
         ))}
       </div>
 
-      {/* Подсказка */}
+      {/* Подсказка про музыку */}
       <div
         id="tapHint"
         style={{
           position: "fixed",
-          bottom: 20,
+          bottom: 18,
           width: "100%",
           textAlign: "center",
-          color: "#ccc",
+          color: "#ddd",
           zIndex: 5,
+          fontSize: "0.9rem",
+          textShadow: "0 0 10px rgba(0,0,0,0.8)",
           animation: "pulse 2s infinite",
         }}
       >
         🎵 Нажми на экран, чтобы включить музыку
       </div>
 
-      {/* Анимация цвета для заголовка */}
+      {/* Ключевые анимации */}
       <style>
         {`
         @keyframes titleColorShift {
@@ -271,12 +288,14 @@ export default function App() {
 
         @keyframes float {
           0% { transform: translateY(0px); }
-          50% { transform: translateY(-12px); }
+          50% { transform: translateY(-10px); }
           100% { transform: translateY(0px); }
         }
 
-        .floating {
-          animation: float 4s ease-in-out infinite;
+        @keyframes pulse {
+          0% { opacity: 0.5; }
+          50% { opacity: 1; }
+          100% { opacity: 0.5; }
         }
         `}
       </style>
