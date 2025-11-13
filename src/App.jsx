@@ -9,7 +9,7 @@ export default function App() {
   const dataArrayRef = useRef(null);
 
   useEffect(() => {
-    // Музыка запускается по клику (iPhone fix)
+    // запуск музыки (iPhone fix)
     const handleClick = () => {
       if (audioRef.current) {
         audioRef.current.play().catch(() => {});
@@ -20,14 +20,14 @@ export default function App() {
     };
     document.addEventListener("click", handleClick);
 
-    // Конфетти каждые 2.5 секунды
+    // конфетти
     const fireConfetti = () => {
-      const end = Date.now() + 1000;
+      const end = Date.now() + 900;
       const colors = ["#ff00ff", "#00f5d4", "#f9c80e", "#ff5400", "#00c3ff"];
       (function frame() {
         confetti({
-          particleCount: 12,
-          spread: 75,
+          particleCount: 10,
+          spread: 80,
           origin: { x: Math.random(), y: Math.random() * 0.3 },
           colors,
         });
@@ -36,7 +36,7 @@ export default function App() {
     };
     const confettiInterval = setInterval(fireConfetti, 2500);
 
-    // Аудио-анализатор
+    // аудио-анализатор для фона
     const audio = audioRef.current;
     const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
     const source = audioCtx.createMediaElementSource(audio);
@@ -49,7 +49,7 @@ export default function App() {
     analyserRef.current = analyser;
     dataArrayRef.current = dataArray;
 
-    // Фон-анимация
+    // фон-анимация
     const canvas = canvasRef.current;
     const ctx = canvas.getContext("2d");
 
@@ -73,18 +73,17 @@ export default function App() {
         0,
         canvas.width / 2,
         canvas.height / 2,
-        canvas.width / 1.3
+        canvas.width / 1.4
       );
 
-      grad.addColorStop(0, `rgba(${150 + avg * 100}, 50, 255, 0.8)`);
-      grad.addColorStop(1, "rgba(0, 0, 0, 0.6)");
+      grad.addColorStop(0, `rgba(${150 + avg * 100}, 50, 255, 0.9)`);
+      grad.addColorStop(1, "rgba(0,0,0,0.5)");
 
       ctx.fillStyle = grad;
       ctx.fillRect(0, 0, canvas.width, canvas.height);
 
       requestAnimationFrame(animate);
     };
-
     animate();
 
     return () => {
@@ -93,6 +92,15 @@ export default function App() {
       audioCtx.close();
     };
   }, []);
+
+  // массив летающих клоунов
+  const flyingClowns = Array.from({ length: 6 }).map((_, i) => ({
+    id: i,
+    size: Math.random() * 40 + 30,
+    xStart: Math.random() * 100,
+    duration: Math.random() * 15 + 12,
+    delay: Math.random() * 8,
+  }));
 
   return (
     <div
@@ -110,20 +118,42 @@ export default function App() {
         flexDirection: "column",
       }}
     >
-      {/* Музыка */}
+      {/* музыка */}
       <audio ref={audioRef} src="/music.mp3" loop preload="auto" />
 
-      {/* Фон */}
+      {/* фон */}
       <canvas
         ref={canvasRef}
-        style={{
-          position: "absolute",
-          inset: 0,
-          zIndex: 1,
-        }}
+        style={{ position: "absolute", inset: 0, zIndex: 1 }}
       />
 
-      {/* 🌈 Заголовок с цветной анимацией + клоуны 🤡 */}
+      {/* ЛЕТАЮЩИЕ КЛОУНЫ 🤡 */}
+      {flyingClowns.map((clown) => (
+        <motion.div
+          key={clown.id}
+          initial={{ y: "110vh", x: `${clown.xStart}vw`, rotate: 0 }}
+          animate={{
+            y: "-20vh",
+            rotate: [0, 20, -20, 0],
+          }}
+          transition={{
+            duration: clown.duration,
+            repeat: Infinity,
+            delay: clown.delay,
+            ease: "easeInOut",
+          }}
+          style={{
+            position: "absolute",
+            fontSize: clown.size,
+            zIndex: 2,
+            pointerEvents: "none",
+          }}
+        >
+          🤡
+        </motion.div>
+      ))}
+
+      {/* Заголовок */}
       <motion.h1
         initial={{ opacity: 0, y: -40 }}
         animate={{ opacity: 1, y: 0 }}
@@ -132,20 +162,26 @@ export default function App() {
           fontSize: "clamp(2.2rem, 7vw, 4.5rem)",
           fontWeight: 700,
           textAlign: "center",
-          background:
-            "linear-gradient(90deg, #ff00ff, #00eaff, #ffea00, #ff00ff)",
-          backgroundSize: "300% 300%",
-          WebkitBackgroundClip: "text",
-          WebkitTextFillColor: "transparent",
-          animation: "titleColorShift 6s ease-in-out infinite",
-          textShadow: "0 0 25px rgba(255,255,255,0.4)",
           zIndex: 3,
         }}
       >
-        🎉🤡 С Днём Рождения, Дима! 🤡🎊
+        🎉{" "}
+        <span
+          style={{
+            background:
+              "linear-gradient(90deg, #ff00ff, #00eaff, #ffea00, #ff00ff)",
+            backgroundSize: "300% 300%",
+            WebkitBackgroundClip: "text",
+            WebkitTextFillColor: "transparent",
+            animation: "titleColorShift 6s ease-in-out infinite",
+          }}
+        >
+          С Днём Рождения, Дима!
+        </span>{" "}
+        🎊
       </motion.h1>
 
-      {/* Текст пожеланий */}
+      {/* текст пожеланий */}
       <motion.p
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
@@ -166,7 +202,7 @@ export default function App() {
         От братишки Исмаила 😎🔥
       </motion.p>
 
-      {/* Фото Димы */}
+      {/* фотографии */}
       <motion.div
         style={{
           display: "flex",
@@ -200,13 +236,12 @@ export default function App() {
               borderRadius: 30,
               border: "3px solid #ff9efc",
               boxShadow: "0 0 50px rgba(255, 94, 219, 0.8)",
-              cursor: "pointer",
             }}
           />
         ))}
       </motion.div>
 
-      {/* Подсказка для iPhone */}
+      {/* подсказка */}
       <div
         id="tapHint"
         style={{
@@ -216,13 +251,12 @@ export default function App() {
           textAlign: "center",
           color: "#ccc",
           zIndex: 5,
-          animation: "pulse 2s infinite",
         }}
       >
         🎵 Нажми на экран, чтобы включить музыку
       </div>
 
-      {/* Анимация смены цвета заголовка */}
+      {/* анимация цвета */}
       <style>
         {`
         @keyframes titleColorShift {
